@@ -1,0 +1,130 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+% TODO (grupo): titulo ainda nao aprovado pelo grupo -- sugestao abaixo, troquem se preferirem outro
+\title{Spino: uma arquitetura modular de baixo custo para telemetria em ensaios de carga estrutural}
+
+\author{
+\IEEEauthorblockN{Arthur de Morais Marques}
+\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
+\textit{Câmpus Caraguatatuba}\\
+Caraguatatuba, Brasil \\
+arthurdemorais2012@ifspcaragua.net}
+\and
+\IEEEauthorblockN{Kauan Edson Leonel Lira}
+\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
+\textit{Câmpus Caraguatatuba}\\
+Caraguatatuba, Brasil \\
+% TODO (Kauan): confirmar e-mail
+e-mail a confirmar}
+\and
+\IEEEauthorblockN{Daniel Patrick de Morais}
+\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
+\textit{Câmpus Caraguatatuba}\\
+Caraguatatuba, Brasil \\
+% TODO (Daniel): confirmar e-mail
+e-mail a confirmar}
+}
+
+\maketitle
+
+% TODO (grupo): rascunho de abstract -- ajustar apos Resultados estarem prontos (frase entre colchetes depende do dado do Kauan)
+\begin{abstract}
+Sistemas de sensoriamento remoto de baixo custo aplicados a ensaios estruturais precisam conciliar aquisição confiável, comunicação sem fio e possibilidade de expansão para interfaces de supervisão. Este trabalho apresenta o Spino, uma arquitetura modular para aquisição e transmissão de telemetria, avaliada nesta etapa em seu primeiro módulo: leitura de carga, preparação da telemetria e transmissão por radiofrequência. Descreve-se a arquitetura do módulo e relata-se uma validação preliminar em bancada, na qual cargas de referência conhecidas são comparadas aos valores recebidos, com cálculo de erro de leitura e de taxa de entrega de pacotes. [Resultados a inserir]. O trabalho contribui com uma arquitetura reprodutível de telemetria de baixo custo e discute os passos necessários para a validação no ensaio completo com a estrutura real.
+\end{abstract}
+
+\begin{IEEEkeywords}
+sensoriamento remoto, telemetria, sistemas embarcados, comunicação por radiofrequência, validação experimental
+\end{IEEEkeywords}
+
+\section{Introdução}
+Sistemas de sensoriamento remoto permitem observar grandezas físicas em locais ou estruturas sem exigir leitura manual contínua. Em aplicações de ensaio estrutural, a disponibilidade de medidas de carga e de seu histórico pode apoiar o acompanhamento do teste, a rastreabilidade das medições e a comunicação dos resultados. Entretanto, soluções de baixo custo precisam conciliar aquisição confiável, comunicação sem fio e possibilidade de expansão para interfaces de supervisão.
+
+Este trabalho apresenta o Spino, uma arquitetura modular para aquisição e transmissão de telemetria aplicada inicialmente ao monitoramento de ensaios de carga em pontes de palito. A arquitetura separa a coleta física, o processamento local e a disponibilização para aplicações de supervisão. Nesta etapa, o foco da avaliação é o Módulo 1, responsável pela leitura do sensor de carga, pela preparação da telemetria e pela transmissão por radiofrequência. A contribuição do trabalho é documentar a arquitetura e relatar uma validação preliminar, reprodutível, do caminho de medição e comunicação em bancada. Para isso, integra-se a leitura de carga a um microcontrolador com transmissão por radiofrequência, avalia-se em bancada a correspondência entre cargas de referência e leituras recebidas -- incluindo entrega de pacotes e atraso, quando aplicável -- e discutem-se as limitações do protótipo e os passos necessários para sua validação no ensaio completo.
+% NOTA: seção "Objetivos" original (5 itens) foi condensada na última frase acima para caber no formato de 6 páginas.
+% Se o grupo preferir manter Objetivos como bloco separado, é só avisar que eu desfaço essa fusão.
+
+\section{Fundamentação Teórica}
+No contexto deste trabalho, sensoriamento remoto é empregado como a aquisição de uma grandeza física no ponto monitorado e sua disponibilização a outro nó do sistema por comunicação sem fio \cite{quartaroli2014}. O Módulo 1 reúne sensor de carga, condicionamento/leitura compatível e microcontrolador, constituindo um sistema embarcado dedicado à aquisição e ao envio de telemetria. A modularização evita acoplar a instrumentação física à interface de supervisão: mudanças no painel ou no armazenamento de dados não devem alterar o caminho básico de leitura e transmissão.
+
+O Arduino é uma plataforma de prototipagem eletrônica de baixo custo, criada em 2005 para viabilizar o desenvolvimento de sistemas embarcados sem exigir a montagem de circuitos a partir de componentes individuais \cite{dasilva}. No Spino, o modelo Arduino Mega foi selecionado por oferecer maior número de pinos de entrada/saída e quatro portas seriais (UART), características que favorecem a integração simultânea de múltiplos sensores \cite{monteiro2019}. No Módulo 1, o Arduino Mega atua como unidade central, realizando a leitura dos sensores, o processamento inicial dos dados e o controle dos periféricos de exibição e transmissão, permitindo operação independente dos demais módulos.
+
+A comunicação por radiofrequência (RF) reduz a necessidade de conexão física entre a estrutura instrumentada e o ponto de recepção, permitindo a troca de dados entre pontos distintos por meio de módulos transmissores e receptores dedicados \cite{oliveira2017}. No Spino, essa comunicação ocorre na faixa de 433 MHz entre os Módulos 1 e 2 -- faixa adequada a sistemas de baixa potência, com comunicação estável a baixo custo, ainda que com taxas de transferência inferiores a Wi-Fi ou Bluetooth, limitação compatível com o pequeno volume de dados transmitido em aplicações de telemetria \cite{weyn2013}.
+
+Um protocolo de comunicação define o conjunto de regras que rege a troca de mensagens entre dispositivos, especificando formato, significado, ordem e as ações associadas à transmissão e recepção de cada mensagem \cite{tanenbaum2011}. O Spino emprega um protocolo próprio, com campos fixos que transportam o nível de bateria dos sensores, os valores medidos, o tempo de operação e um mecanismo de verificação de integridade -- o checksum, conjunto de bits usado para validar a consistência dos dados recebidos \cite{tanenbaum2011}.
+
+\section{Arquitetura do Módulo 1}
+% TODO (Arthur): esta secao esta incompleta -- falta o texto de ligacao, a especificacao do sensor de carga usado
+% e a confirmacao dos campos da tabela abaixo (larguras/tipos de cada subcampo ainda nao foram confirmados).
+A Tabela~\ref{tab:protocolo} apresenta a estrutura do quadro de telemetria definido para o Módulo 1, delimitado por marcadores de início e fim, com campos organizados por grandeza.
+
+\begin{table}[htbp]
+\caption{Estrutura do quadro de telemetria do Módulo 1}
+\begin{center}
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Campo} & \textbf{Subcampos} & \textbf{Descrição} \\
+\hline
+* & 1 & Delimitador de início \\
+\hline
+B & B1--B3 & Nível de bateria \\
+\hline
+P & P1--P4 & Peso máximo registrado \\
+\hline
+PA & PA1--PA4 & Peso atual \\
+\hline
+A & A1--A3 & Ângulo da ponte \\
+\hline
+T & T1--T4 & Tempo de medição \\
+\hline
+F & F1 & Flag de operação (0 ou 1) \\
+\hline
+C & C1--C2 & Checksum \\
+\hline
+\# & 1 & Delimitador de fim \\
+\hline
+\end{tabular}
+\label{tab:protocolo}
+\end{center}
+\end{table}
+% TODO (grupo): [PENDENTE] descricao do sensor de carga (modelo/faixa), do modulo RF especifico usado,
+% da frequencia de envio real, e do metodo usado para deteccao de perda de pacote (ver duvida no chat).
+
+\section{Método para os Resultados Preliminares}
+O ensaio de bancada aplica massas de referência conhecidas ao conjunto sensor-leitura e registra, para cada repetição, a massa de referência, o valor recebido, os identificadores dos pacotes enviados e recebidos e os instantes de aplicação e recepção, quando disponíveis. A análise apresenta o erro absoluto e relativo das leituras; a taxa de entrega é calculada pela razão entre pacotes recebidos e enviados. Quando reportado, o atraso é medido entre os dois eventos explicitamente definidos no protocolo de teste. O teste não substitui o ensaio com a ponte completa; verifica apenas o comportamento preliminar do módulo de aquisição e comunicação.
+
+\section{Resultados}
+% TODO (Kauan): PENDENTE -- inserir tabela/grafico com os dados reais do ensaio de bancada (seguindo o Metodo acima)
+% e o texto de analise (erro absoluto/relativo, taxa de entrega, atraso se aplicavel).
+\textbf{[Seção pendente -- aguardando dados do ensaio de bancada]}
+
+\section{Conclusão}
+% TODO (grupo): PENDENTE -- retomar objetivo, resumir o que os Resultados mostraram, limitacoes (só o Módulo 1
+% está pronto) e proximos passos (Módulos 2 e 3, ensaio completo com a ponte).
+\textbf{[Seção pendente]}
+
+\section*{Agradecimentos}
+% TODO (grupo): opcional. Se a revisão for double-blind, NAO preencher esta seção antes da submissão --
+% agradecimentos podem identificar os autores/instituição. Confirmar exigência de anonimização no JEMS3 antes.
+
+\begin{thebibliography}{00}
+\bibitem{quartaroli2014} C. F. Quartaroli, L. E. Vicente e L. S. de Araújo, ``Sensoriamento remoto,'' Embrapa, 2014.
+\bibitem{tanenbaum2011} A. S. Tanenbaum e D. J. Wetherall, \textit{Redes de Computadores}, 5. ed. São Paulo: Pearson Prentice Hall, 2011.
+\bibitem{weyn2013} F. Weyn, T. Ergeerts e P. Hellinckx, [REFERÊNCIA COMPLETA PENDENTE -- confirmar título/veículo de publicação], 2013.
+\bibitem{oliveira2017} Oliveira e Lima, [REFERÊNCIA COMPLETA PENDENTE -- confirmar título/veículo de publicação], 2017.
+\bibitem{monteiro2019} Monteiro, Machado e Oliveira, [REFERÊNCIA COMPLETA PENDENTE -- confirmar título/veículo de publicação], 2019.
+\bibitem{dasilva} Da Silva, ``Visão Geral Sobre Microcontroladores e Prototipagem com Arduino,'' [ano e veículo de publicação pendentes].
+\end{thebibliography}
+
+\end{document}
