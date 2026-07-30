@@ -43,7 +43,7 @@ leonel@ifspcaragua.net}
 \textit{Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
 % TODO (Daniel): confirmar e-mail
-e-mail a confirmar}
+danielmorais@ifspcaragua.net}
 \and
 \IEEEauthorblockN{Ederson Rafael Wagner}
 \IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
@@ -86,76 +86,192 @@ A arquitetura do Spino organiza-se em três módulos com responsabilidades bem d
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{figuras/Arquitetura_spino.pdf}
+\includegraphics[width=0.85\textwidth]{figuras/arquitetura_spino_atualizada.pdf}
 \caption{Visão geral da arquitetura do Spino, com os três módulos e seus componentes internos.}
 \label{fig:arquitetura}
 \end{figure*}
 
 \subsection{Módulo 1 --- Sensoriamento, processamento e transmissão}
-O Módulo 1 constitui a unidade de campo da arquitetura Spino, sendo responsável pela interação direta com os sensores instalados no ambiente ou na estrutura monitorada. Sua principal função é adquirir as grandezas físicas de interesse, realizar o processamento inicial das leituras, organizar as informações em um quadro de telemetria e transmiti-las ao módulo receptor por meio de comunicação sem fio \cite{ouldzira2019,vidalpardo2018,njoku2025}.
 
-A unidade central do módulo pode ser composta por um microcontrolador, escolhido de acordo com os requisitos da aplicação. Neste projeto, foi utilizado um Arduino Mega por apresentar bom desempenho e facilidade de integração com diferentes componentes \cite{vidalpardo2018,njoku2025,elabd2017,arduinodocs}. Entretanto, essa escolha não é fixa, podendo ser substituída por outro microcontrolador conforme as necessidades específicas de cada aplicação.
+O Módulo 1 constitui a unidade de campo da arquitetura Spino,
+sendo responsável pela interação direta com os sensores e demais
+componentes instalados no ambiente ou na estrutura monitorada.
+Suas principais funções são adquirir as grandezas físicas de
+interesse, realizar o processamento inicial das leituras,
+acompanhar as condições de operação, organizar as informações
+segundo o protocolo de comunicação do Spino e transmitir o quadro
+resultante ao Módulo 2 por meio de comunicação sem fio
+\cite{ouldzira2019,vidalpardo2018,njoku2025}.
 
-A configuração dos sensores conectados ao Módulo 1 depende da aplicação em que o Spino é utilizado. No estudo de caso da ponte de palitos, o módulo foi configurado para coletar informações relacionadas à carga aplicada, à inclinação da estrutura, ao tempo de ensaio e ao nível de alimentação do sistema, correspondentes aos campos de peso, ângulo, tempo e bateria apresentados na Tabela~\ref{tab:protocolo}. Entretanto, a organização do módulo não está limitada a essas grandezas. Outros sensores podem ser integrados, desde que suas leituras sejam compatíveis com as interfaces disponíveis e tratadas pelo programa embarcado \cite{vidalpardo2018,njoku2025}.
+A unidade central do módulo pode ser composta por um
+microcontrolador escolhido conforme os requisitos da aplicação.
+Neste projeto, foi utilizado um Arduino Mega em razão da
+quantidade de entradas e saídas disponíveis, da presença de
+múltiplas interfaces seriais e da compatibilidade com os sensores
+e módulos de comunicação empregados
+\cite{vidalpardo2018,njoku2025,elabd2017,arduinodocs}.
+Entretanto, essa escolha não é fixa, podendo o componente ser
+substituído por outro microcontrolador que atenda aos requisitos
+da aplicação.
 
-Após a aquisição, os dados passam por uma etapa de processamento local. Essa etapa pode envolver procedimentos como conversão de unidades, aplicação de fatores de calibração, filtragem de oscilações, comparação com valores anteriores, cálculo de valores acumulados e identificação de condições específicas da aplicação \cite{vidalpardo2018,njoku2025}. No estudo de caso, por exemplo, o sistema mantém o registro da carga atual e da maior carga observada durante o ensaio.
-
-O processamento local reduz a necessidade de encaminhar dados brutos aos módulos seguintes. Dessa forma, as informações transmitidas já se encontram organizadas de acordo com os requisitos da aplicação. Essa característica também permite que determinadas funções continuem sendo executadas no ponto monitorado, mesmo quando os módulos de supervisão ou armazenamento estiverem temporariamente indisponíveis.
-
-Depois de processadas, as informações são organizadas segundo um protocolo de comunicação -- conjunto de regras que especifica formato, significado, ordem e as ações associadas à transmissão e recepção de cada mensagem \cite{tanenbaum2011} -- e inseridas em um quadro de telemetria. O quadro contém delimitadores de início e fim, campos destinados às grandezas monitoradas, informações sobre o estado de operação e um mecanismo de verificação de integridade \cite{tanenbaum2011}. O formato adotado permite que o módulo receptor identifique o início da mensagem, interprete seus campos e verifique possíveis inconsistências ocorridas durante a transmissão \cite{tanenbaum2011}. A Tabela~\ref{tab:protocolo} apresenta a estrutura do quadro de telemetria definido para o Módulo 1.
+A configuração dos sensores conectados ao Módulo 1 depende do
+caso de uso em que o Spino é empregado. No estudo de caso das
+pontes de palito, sensores são utilizados para adquirir a carga
+aplicada e uma medida associada à flexão da estrutura,
+representada pela deflexão observada no ponto instrumentado. O
+módulo também acompanha o nível de alimentação e o tempo
+transcorrido do ensaio. Esses dados correspondem aos campos de
+carga máxima, carga atual, deflexão, tempo, nível de bateria e
+estado de operação apresentados na
+Tabela~\ref{tab:protocolo}.
 
 \begin{table}[htbp]
-\caption{Estrutura do quadro de telemetria do Módulo 1}
-\begin{center}
-\begin{tabular}{|c|c|l|}
-\hline
-\textbf{Campo} & \textbf{Dígitos} & \textbf{Descrição} \\
-\hline
-* & 3 & Delimitador de início \\
-\hline
-B & 3 & Nível de bateria$^{\mathrm{a}}$ \\
-\hline
-P & 4 & Peso máximo registrado \\
-\hline
-PA & 4 & Peso atual \\
-\hline
-A & 3 & Ângulo da ponte \\
-\hline
-T & 4 & Tempo de medição \\
-\hline
-F & 1 & Flag de operação (0 ou 1) \\
-\hline
-C & 2 & Checksum \\
-\hline
-\# & 3 & Delimitador de fim \\
-\hline
-\multicolumn{3}{l}{$^{\mathrm{a}}$Cada campo é uma string numérica de largura fixa, convertida}\\
-\multicolumn{3}{l}{para um único valor inteiro -- não subcampos independentes.}
-\end{tabular}
-\label{tab:protocolo}
-\end{center}
+    \caption{Estrutura do quadro do protocolo de comunicação
+    do Spino}
+    \label{tab:protocolo}
+    \centering
+    \footnotesize
+    \renewcommand{\arraystretch}{1.05}
+    \begin{tabular}{|c|c|c|p{3.25cm}|}
+        \hline
+        \textbf{Pos.} &
+        \textbf{Campo} &
+        \textbf{Car.} &
+        \textbf{Descrição} \\
+        \hline
+        0--2 & \texttt{INI} & 3 &
+        Delimitador de início \texttt{***} \\
+        \hline
+        3--5 & \texttt{BAT} & 3 &
+        Nível de bateria \\
+        \hline
+        6--9 & \texttt{CM} & 4 &
+        Carga máxima registrada \\
+        \hline
+        10--13 & \texttt{CA} & 4 &
+        Carga atual \\
+        \hline
+        14--16 & \texttt{DEF} & 3 &
+        Deflexão associada à flexão da ponte \\
+        \hline
+        17--20 & \texttt{TEM} & 4 &
+        Tempo transcorrido do ensaio \\
+        \hline
+        21 & \texttt{F} & 1 &
+        Flag de operação, 0 ou 1 \\
+        \hline
+        22--23 & \texttt{CHK} & 2 &
+        Checksum do quadro \\
+        \hline
+        24--26 & \texttt{FIM} & 3 &
+        Delimitador de fim \texttt{\#\#\#} \\
+        \hline
+    \end{tabular}
+
+    \vspace{0.1cm}
+    \parbox{0.98\columnwidth}{
+        \footnotesize
+        Os campos numéricos são transmitidos como cadeias de
+        caracteres de largura fixa. Quando necessário, são
+        acrescentados zeros à esquerda. As unidades e escalas
+        empregadas devem ser definidas de forma idêntica no
+        transmissor e no receptor.
+    }
 \end{table}
 
-A comunicação entre o Módulo 1 e o módulo receptor é realizada por radiofrequência na faixa de 433 MHz \cite{ouldzira2019}. Em cada ciclo de funcionamento, o microcontrolador realiza a leitura dos sensores, atualiza os dados processados, constrói o quadro de telemetria e solicita sua transmissão. Esse ciclo é executado periodicamente, permitindo que as informações do ponto monitorado sejam atualizadas ao longo da operação \cite{ouldzira2019}.
+A organização do Módulo 1 não está limitada a essas grandezas.
+Outros sensores podem ser integrados, desde que suas interfaces
+sejam compatíveis com o microcontrolador e suas leituras sejam
+tratadas pelo software embarcado
+\cite{vidalpardo2018,njoku2025}.
 
-A separação entre aquisição, comunicação e supervisão constitui um dos princípios da arquitetura Spino. O Módulo 1 concentra as funções diretamente relacionadas aos sensores e ao tratamento inicial das grandezas físicas, enquanto os módulos seguintes são responsáveis pela recepção, interpretação, armazenamento e apresentação das informações \cite{ouldzira2019}. Com isso, modificações na interface de supervisão não exigem alterações diretas nos sensores, assim como a substituição de um sensor não implica necessariamente a reconstrução de toda a arquitetura.
+Após a aquisição, os dados passam por uma etapa de processamento
+local. Essa etapa pode envolver conversão de unidades, aplicação
+de fatores de calibração, filtragem de oscilações, comparação com
+valores anteriores e identificação de condições específicas da
+aplicação \cite{vidalpardo2018,njoku2025}. No estudo de caso, o
+sistema mantém, entre outras informações, a carga atual, a maior
+carga observada durante o ensaio, a deflexão da estrutura e o
+tempo transcorrido.
 
-Essa organização possibilita a utilização do Módulo 1 em diferentes projetos. Em um pluviômetro, por exemplo, o módulo pode receber dados de um sensor de precipitação e processar informações como quantidade de basculamentos, volume acumulado e intensidade da chuva. Em uma estação ambiental, pode integrar sensores de temperatura, umidade e pressão. Já em aplicações estruturais, pode receber dados de células de carga, sensores de inclinação ou outros dispositivos de instrumentação. A integração de diferentes sensores em sistemas de aquisição baseados em Arduino é demonstrada em aplicações experimentais que envolvem a coleta e o processamento simultâneo de diferentes grandezas físicas \cite{vidalpardo2018,njoku2025}.
+Depois de processadas, as informações são organizadas segundo o
+protocolo de comunicação do Spino. Um protocolo estabelece as
+regras relacionadas ao formato, ao significado e à ordem das
+mensagens trocadas entre as entidades comunicantes
+\cite{tanenbaum2011}. No Spino, essas regras definem o
+comprimento do quadro, a posição ocupada por cada informação,
+os delimitadores de início e fim e o mecanismo utilizado para a
+verificação de integridade.
 
-Embora a configuração empregada no presente estudo esteja relacionada ao monitoramento de uma ponte de palitos, o Módulo 1 foi concebido como uma unidade configurável de sensoriamento e telemetria. A adaptação para outras aplicações exige principalmente a alteração dos sensores, das regras de processamento e dos campos específicos da mensagem, preservando-se o fluxo geral de aquisição, tratamento e transmissão dos dados.
+
+Os identificadores apresentados nessa representação são apenas
+simbólicos e não são transmitidos juntamente com os valores. O
+receptor identifica cada informação de acordo com sua posição no
+quadro. Os campos \texttt{INI} e \texttt{FIM} delimitam a
+mensagem; \texttt{BAT} representa o nível de bateria;
+\texttt{CM} e \texttt{CA} representam, respectivamente, a carga
+máxima e a carga atual; \texttt{DEF} representa a deflexão
+associada à flexão da estrutura; \texttt{TEM} representa o tempo
+de ensaio; \texttt{F} indica o estado de operação; e
+\texttt{CHK} contém o checksum. A
+Tabela~\ref{tab:protocolo} apresenta as posições reservadas a cada
+campo.
+
+A comunicação entre os Módulos 1 e 2 é realizada por
+radiofrequência na faixa de 433~MHz \cite{ouldzira2019}. Em
+cada ciclo de funcionamento, o microcontrolador realiza a
+leitura dos sensores, atualiza o tempo e as variáveis de
+operação, processa os valores adquiridos, constrói o quadro
+segundo o protocolo de comunicação e solicita sua transmissão.
+Esse ciclo é executado periodicamente, permitindo a atualização
+das informações ao longo do ensaio.
+
+A separação entre aquisição, processamento, comunicação e
+supervisão constitui um dos princípios da arquitetura Spino. O
+Módulo 1 concentra as funções diretamente relacionadas à
+instrumentação e ao tratamento inicial das grandezas físicas. O
+Módulo 2 realiza a recepção, a validação e o processamento de
+borda, enquanto o Módulo 3 concentra a persistência, as regras
+de negócio e a supervisão web. Dessa forma, alterações nas
+interfaces de supervisão não exigem modificações diretas nos
+sensores, desde que sejam preservadas as interfaces de
+comunicação entre os módulos.
+
+Essa organização possibilita a utilização do Módulo 1 em
+diferentes projetos. Em um pluviômetro, por exemplo, o módulo
+pode receber dados de um sensor de precipitação e processar
+informações como quantidade de basculamentos, volume acumulado
+e intensidade da chuva. Em uma estação ambiental, pode integrar
+sensores de temperatura, umidade e pressão. Já em aplicações
+estruturais, pode receber dados de células de carga, sensores de
+deformação ou deslocamento e outros dispositivos de
+instrumentação. A integração de diferentes sensores em sistemas
+de aquisição baseados em Arduino é demonstrada em aplicações
+experimentais que envolvem a coleta e o processamento simultâneo
+de diferentes grandezas físicas
+\cite{vidalpardo2018,njoku2025}.
+
+Embora a configuração empregada neste estudo esteja relacionada
+ao monitoramento de pontes de palito, o Módulo 1 foi concebido
+como uma unidade configurável de aquisição, processamento e
+comunicação. Sua adaptação a outras aplicações exige
+principalmente a substituição dos sensores, a alteração das regras
+de processamento e a redefinição dos campos específicos do
+protocolo, preservando-se o fluxo geral de aquisição, tratamento e
+transmissão dos dados.
 
 \subsection{Módulo 2 --- Processamento de borda e supervisão local}
-O Módulo 2 representa a camada intermediária de processamento de borda (\textit{edge computing}) da arquitetura Spino, atuando como elo entre o módulo de aquisição (Módulo 1) e o sistema de supervisão (Módulo 3). Sua função é receber os quadros de telemetria transmitidos pelo Módulo 1, validar sua integridade, interpretar os campos da mensagem, organizar os dados recebidos e encaminhá-los ao servidor de supervisão.
+O Módulo 2 representa a camada intermediária de processamento de borda (\textit{edge computing}) da arquitetura Spino, atuando como elo entre o módulo de aquisição (Módulo 1) e o sistema de supervisão (Módulo 3). Sua função é receber os protocolos de comnicação transmitidos pelo Módulo 1, validar sua integridade, interpretar os campos da mensagem, organizar os dados recebidos e encaminhá-los ao servidor de supervisão.
 
 A plataforma computacional principal do Módulo 2 é um Raspberry Pi 3B+, escolhido por oferecer capacidade de processamento e conectividade de rede suficientes a baixo custo. Essa escolha, entretanto, não é obrigatória: a arquitetura admite qualquer computador embarcado capaz de executar um sistema operacional, interpretar os dados recebidos e comunicar-se com o servidor de supervisão por meio de protocolos de rede.
 
-Durante os testes de recepção, constatou-se que o uso de receptores RF conectados diretamente ao Raspberry Pi apresentava limitações de estabilidade. Diante disso, adotou-se uma arquitetura híbrida, na qual um segundo Arduino Mega, dedicado exclusivamente à recepção, permanece responsável pela captação física dos sinais de radiofrequência em 433 MHz junto ao receptor RF, enquanto o Raspberry Pi assume as funções de processamento de borda. Nessa configuração, o Arduino atua como conversor entre o enlace de radiofrequência e uma interface serial USB, encaminhando ao Raspberry Pi exclusivamente os quadros de telemetria já recebidos. Essa decisão foi motivada por ganhos de estabilidade na recepção, maior imunidade a interferências, simplicidade de implementação e maior confiabilidade experimental observada nos testes realizados.
+Durante os testes de recepção, constatou-se que o uso de receptores RF conectados diretamente ao Raspberry Pi apresentava limitações de estabilidade. Diante disso, adotou-se uma arquitetura híbrida, na qual um segundo Arduino Mega, dedicado exclusivamente à recepção, permanece responsável pela captação física dos sinais de radiofrequência em 433 MHz junto ao receptor RF, enquanto o Raspberry Pi assume as funções de processamento de borda. Nessa configuração, o Arduino atua como conversor entre o enlace de radiofrequência e uma interface serial USB, encaminhando ao Raspberry Pi exclusivamente os protocolos já recebidos. Essa decisão foi motivada por ganhos de estabilidade na recepção, maior imunidade a interferências, simplicidade de implementação e maior confiabilidade experimental observada nos testes realizados.
 
 A comunicação entre o Arduino receptor e o Raspberry Pi ocorre por meio de interface serial USB. No Raspberry Pi, um processo monitora continuamente a porta serial correspondente, identificando novas mensagens, realizando sua leitura e encaminhando-as às etapas seguintes de processamento.
 
 O emprego do processamento de borda nesta camada tem papel central na arquitetura Spino: ao concentrar validações e tratamentos próximos da origem dos dados, essa abordagem reduz a carga computacional do servidor central, diminui o tráfego de informações desnecessárias em direção à supervisão e aumenta a robustez do sistema frente a instabilidades pontuais de rede \cite{shi2016}.
 
-Após a recepção de cada mensagem, o software executado no Raspberry Pi realiza as etapas necessárias para transformar o quadro bruto em dados utilizáveis: identifica os delimitadores de início e fim, valida a estrutura do protocolo, separa os campos do quadro e converte os valores recebidos para os tipos de dados correspondentes. Em seguida, verifica a integridade da mensagem por meio do mecanismo de checksum já definido no protocolo do Módulo 1 \cite{tanenbaum2011}, descartando quadros inválidos e tratando eventuais erros de comunicação antes de preparar os dados para as etapas seguintes. Essa validação prévia evita o armazenamento de informações corrompidas ou inconsistentes no sistema de supervisão. O Algoritmo~\ref{lst:checksum} apresenta o cálculo do checksum: a soma dos três últimos dígitos do quadro, antes do próprio campo de checksum, reduzida ao intervalo de 0 a 99.
+Após a recepção de cada mensagem, o software executado no Raspberry Pi realiza as etapas necessárias para transformar o protocolo bruto em dados utilizáveis: identifica os delimitadores de início e fim, valida a estrutura do protocolo, separa os campos do quadro e converte os valores recebidos para os tipos de dados correspondentes. Em seguida, verifica a integridade da mensagem por meio do mecanismo de checksum já definido no protocolo do Módulo 1 \cite{tanenbaum2011}, descartando quadros inválidos e tratando eventuais erros de comunicação antes de preparar os dados para as etapas seguintes. Essa validação prévia evita o armazenamento de informações corrompidas ou inconsistentes no sistema de supervisão. O Algoritmo~\ref{lst:checksum} apresenta o cálculo do checksum: a soma dos três últimos dígitos do quadro, antes do próprio campo de checksum, reduzida ao intervalo de 0 a 99.
 
 \begin{lstlisting}[caption={Cálculo do checksum no decodificador do Módulo 2}, label={lst:checksum}]
 def _calcular_checksum(self, dados: str) -> str:
@@ -190,7 +306,7 @@ No estágio atual, o cadastro de equipes e a persistência de dados já estão i
 \section{Conclusão}
 Este trabalho apresentou o Spino, uma arquitetura modular para aquisição, processamento e disponibilização de telemetria, projetada para ser adaptável a diferentes domínios de sensoriamento remoto. Foram detalhados os três módulos que compõem a arquitetura -- aquisição de campo, processamento de borda e supervisão local, e centralização web das regras de negócio -- bem como o estado atual de sua implementação, empregando como estudo de caso o monitoramento de ensaios de carga em competições de pontes de palito.
 
-No estágio atual, o Módulo 1 opera de forma autônoma e completa, realizando a aquisição, o processamento inicial e a transmissão dos dados por radiofrequência. O Módulo 2 recebe, valida e processa os quadros de telemetria, disponibilizando parte dessas informações por meio de uma interface de exibição local em tempo real, ainda em ajuste para contemplar a totalidade dos campos do protocolo; a etapa de encaminhamento ao Módulo 3 permanece em desenvolvimento. O Módulo 3, por sua vez, já implementa o cadastro de equipes e a persistência de dados, ainda operando com dados simulados na exibição das leituras coletadas pelos módulos de campo.
+No estágio atual, o Módulo 1 opera de forma autônoma e completa, realizando a aquisição, o processamento inicial e a transmissão dos dados por radiofrequência. O Módulo 2 recebe, valida e processa os protocolos de comunicação, disponibilizando parte dessas informações por meio de uma interface de exibição local em tempo real, ainda em ajuste para contemplar a totalidade dos campos do protocolo; a etapa de encaminhamento ao Módulo 3 permanece em desenvolvimento. O Módulo 3, por sua vez, já implementa o cadastro de equipes e a persistência de dados, ainda operando com dados simulados na exibição das leituras coletadas pelos módulos de campo.
 
 A principal limitação deste trabalho é a ausência de uma integração de ponta a ponta entre os três módulos: embora cada um opere de forma independente e, em grande parte, funcional, a validação apresentada não contempla o fluxo completo de dados desde a aquisição até a supervisão web. Como trabalhos futuros, pretende-se concluir a integração via API entre os Módulos 2 e 3, validar a arquitetura em operação completa durante uma competição real, e avaliar a adaptação do Módulo 1 a outros domínios de sensoriamento, reforçando o caráter modular e reconfigurável proposto para a arquitetura Spino.
 
