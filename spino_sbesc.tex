@@ -27,30 +27,30 @@
 
 \author{
 \IEEEauthorblockN{Arthur de Morais Marques}
-\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
-\textit{Câmpus Caraguatatuba}\\
+\IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
+\textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
-arthurdemorais2012@ifspcaragua.net}
+arthur.morais@aluno.ifsp.edu.br}
 \and
 \IEEEauthorblockN{Kauan Edson Leonel Lira}
-\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
-\textit{Câmpus Caraguatatuba}\\
+\IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
+\textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
 leonel@ifspcaragua.net}
 \and
 \IEEEauthorblockN{Daniel Patrick de Morais}
-\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
-\textit{Câmpus Caraguatatuba}\\
+\IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
+\textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
 % TODO (Daniel): confirmar e-mail
 danielmorais@ifspcaragua.net}
 \and
 \IEEEauthorblockN{Ederson Rafael Wagner}
-\IEEEauthorblockA{\textit{Instituto Federal de Educação, Ciência e Tecnologia de São Paulo} \\
-\textit{Câmpus Caraguatatuba}\\
+\IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
+\textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
 % TODO (Ederson): confirmar e-mail
-e-mail a confirmar}
+erwagner@ifsp.edu.br}
 }
 
 \maketitle
@@ -261,24 +261,15 @@ protocolo, preservando-se o fluxo geral de aquisição, tratamento e
 transmissão dos dados.
 
 \subsection{Módulo 2 --- Processamento de borda e supervisão local}
-O Módulo 2 representa a camada intermediária de processamento de borda (\textit{edge computing}) da arquitetura Spino, atuando como elo entre o módulo de aquisição (Módulo 1) e o sistema de supervisão (Módulo 3). Sua função é receber os protocolos de comnicação transmitidos pelo Módulo 1, validar sua integridade, interpretar os campos da mensagem, organizar os dados recebidos e encaminhá-los ao servidor de supervisão.
+O Módulo 2 representa a camada intermediária de processamento de borda (\textit{edge computing}) da arquitetura Spino, atuando como elo entre os módulos de aquisição (Módulo 1) e o sistema de supervisão (Módulo 3). Sua função é receber os protocolos de comunicação transmitidos por uma ou mais unidades do Módulo 1 operando simultaneamente, validar sua integridade, interpretar os campos da mensagem, organizar os dados recebidos e encaminhá-los ao servidor de supervisão.
 
 A plataforma computacional principal do Módulo 2 é um Raspberry Pi 3B+, escolhido por oferecer capacidade de processamento e conectividade de rede suficientes a baixo custo. Essa escolha, entretanto, não é obrigatória: a arquitetura admite qualquer computador embarcado capaz de executar um sistema operacional, interpretar os dados recebidos e comunicar-se com o servidor de supervisão por meio de protocolos de rede.
 
-Durante os testes de recepção, constatou-se que o uso de receptores RF conectados diretamente ao Raspberry Pi apresentava limitações de estabilidade. Diante disso, adotou-se uma arquitetura híbrida, na qual um segundo Arduino Mega, dedicado exclusivamente à recepção, permanece responsável pela captação física dos sinais de radiofrequência em 433 MHz junto ao receptor RF, enquanto o Raspberry Pi assume as funções de processamento de borda. Nessa configuração, o Arduino atua como conversor entre o enlace de radiofrequência e uma interface serial USB, encaminhando ao Raspberry Pi exclusivamente os protocolos já recebidos. Essa decisão foi motivada por ganhos de estabilidade na recepção, maior imunidade a interferências, simplicidade de implementação e maior confiabilidade experimental observada nos testes realizados.
-
-A comunicação entre o Arduino receptor e o Raspberry Pi ocorre por meio de interface serial USB. No Raspberry Pi, um processo monitora continuamente a porta serial correspondente, identificando novas mensagens, realizando sua leitura e encaminhando-as às etapas seguintes de processamento.
+A recepção dos sinais de radiofrequência em 433 MHz é realizada diretamente pelo Raspberry Pi, por meio de um módulo receptor RF conectado ao dispositivo. Um processo em execução no Raspberry Pi monitora continuamente esse módulo, identificando novas mensagens, realizando sua leitura e encaminhando-as às etapas seguintes de processamento.
 
 O emprego do processamento de borda nesta camada tem papel central na arquitetura Spino: ao concentrar validações e tratamentos próximos da origem dos dados, essa abordagem reduz a carga computacional do servidor central, diminui o tráfego de informações desnecessárias em direção à supervisão e aumenta a robustez do sistema frente a instabilidades pontuais de rede \cite{shi2016}.
 
-Após a recepção de cada mensagem, o software executado no Raspberry Pi realiza as etapas necessárias para transformar o protocolo bruto em dados utilizáveis: identifica os delimitadores de início e fim, valida a estrutura do protocolo, separa os campos do quadro e converte os valores recebidos para os tipos de dados correspondentes. Em seguida, verifica a integridade da mensagem por meio do mecanismo de checksum já definido no protocolo do Módulo 1 \cite{tanenbaum2011}, descartando quadros inválidos e tratando eventuais erros de comunicação antes de preparar os dados para as etapas seguintes. Essa validação prévia evita o armazenamento de informações corrompidas ou inconsistentes no sistema de supervisão. O Algoritmo~\ref{lst:checksum} apresenta o cálculo do checksum: a soma dos três últimos dígitos do quadro, antes do próprio campo de checksum, reduzida ao intervalo de 0 a 99.
-
-\begin{lstlisting}[caption={Cálculo do checksum no decodificador do Módulo 2}, label={lst:checksum}]
-def _calcular_checksum(self, dados: str) -> str:
-    # Soma dos ultimos 3 digitos % 100
-    soma = sum(int(d) for d in dados[-3:])
-    return f"{soma % 100:02d}"
-\end{lstlisting}
+Após a recepção de cada mensagem, o software executado no Raspberry Pi realiza as etapas necessárias para interpretar o quadro recebido: identifica os delimitadores de início e fim, valida sua estrutura, separa os campos do quadro e converte os valores recebidos para os tipos de dados correspondentes. Em seguida, verifica a integridade da mensagem por meio do mecanismo de checksum já definido no protocolo do Módulo 1 \cite{tanenbaum2011}, descartando quadros inválidos e tratando eventuais erros de comunicação antes de preparar os dados para as etapas seguintes. Essa validação prévia evita o armazenamento de informações corrompidas ou inconsistentes no sistema de supervisão. 
 
 Além dessas validações, o Módulo 2 pode incorporar funções adicionais de pré-processamento, como filtragem de mensagens duplicadas, controle da frequência de envio, agregação de leituras, identificação de falhas de comunicação, registro de eventos locais e armazenamento temporário dos dados em situações de indisponibilidade do servidor. Essas funções tornam o sistema mais resiliente diante de falhas temporárias de conectividade.
 
