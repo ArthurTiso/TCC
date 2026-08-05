@@ -23,7 +23,7 @@
 \begin{document}
 
 % TODO (grupo): titulo ainda nao aprovado pelo grupo -- reflete o pivo para adaptabilidade
-\title{Spino: uma arquitetura modular de baixo custo para telemetria adaptável a múltiplos casos de uso}
+\title{Spino: arquitetura modular e adaptável para sensoriamento remoto de baixo custo}
 
 \author{
 \IEEEauthorblockN{Arthur de Morais Marques}
@@ -36,14 +36,14 @@ arthur.morais@aluno.ifsp.edu.br}
 \IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
 \textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
-leonel@ifspcaragua.net}
+k.leonel@aluno.ifsp.edu.br}
 \and
 \IEEEauthorblockN{Daniel Patrick de Morais}
 \IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
 \textit{IFSP -- Câmpus Caraguatatuba}\\
 Caraguatatuba, Brasil \\
 % TODO (Daniel): confirmar e-mail
-danielmorais@ifspcaragua.net}
+daniel.morais@aluno.ifsp.edu.br}
 \and
 \IEEEauthorblockN{Ederson Rafael Wagner}
 \IEEEauthorblockA{\textit{Laboratório de Tecnologia (LabTech)} \\
@@ -77,21 +77,21 @@ Como instanciação da arquitetura, considera-se o Concurso de Pontes de Palito 
 
 Este trabalho tem como objetivo detalhar essa arquitetura e descrever sua instanciação para a aquisição e a transmissão de dados de carga no estudo de caso adotado. O Módulo 1 é apresentado em sua implementação atual, plenamente funcional; os Módulos 2 e 3 são descritos como componentes da arquitetura proposta para processamento de borda, persistência, supervisão e aplicação de regras de negócio, com o estado de implementação de cada um discutido ao longo do texto.
 
-Para isso, estrutura-se o Módulo 1 para aquisição contínua de dados de carga por meio de sensores, microcontrolador e comunicação por radiofrequência; implementa-se o Módulo 2 como camada de computação de borda, responsável por receber, pré-processar, armazenar temporariamente e exibir localmente os dados, encaminhando-os ao servidor por requisições HTTP; e projeta-se o Módulo 3 como plataforma web para persistência, distribuição de atualizações em tempo real e centralização das regras de negócio da competição. Quando os dados coletados permitirem, avalia-se ainda, em bancada, a correspondência entre cargas de referência e leituras recebidas, a entrega de pacotes e o atraso de comunicação.
+Para isso, estrutura-se o Módulo 1 para aquisição contínua de dados de carga por meio de sensores, microcontrolador e comunicação por radiofrequência; implementa-se o Módulo 2 como camada de computação de borda, responsável por receber, pré-processar, armazenar temporariamente e exibir localmente os dados, encaminhando-os ao servidor por requisições HTTP; e projeta-se o Módulo 3 como plataforma web para persistência, distribuição de atualizações em tempo real e centralização das regras de negócio da competição.
 
 \section{Arquitetura da Plataforma Spino}
 
 \subsection{Visão Geral}
-A arquitetura do Spino organiza-se em três módulos com responsabilidades bem delimitadas, descritos nas subseções seguintes: aquisição de campo (Módulo 1), processamento de borda e supervisão local (Módulo 2) e centralização das regras de negócio em uma plataforma web (Módulo 3). Essa divisão permite que cada módulo evolua, seja substituído ou testado de forma independente, sem exigir alterações nos demais. A Figura~\ref{fig:arquitetura} apresenta a visão geral da arquitetura, incluindo os componentes internos de cada módulo e os pontos de comunicação entre eles.
+A arquitetura do Spino organiza-se em três módulos com responsabilidades bem delimitadas, descritos nas subseções seguintes: Aquisição e processamento de campo (Módulo 1), processamento de borda e supervisão local (Módulo 2) e centralização das regras de negócio em uma plataforma web (Módulo 3). Essa divisão permite que cada módulo evolua, seja substituído ou testado de forma independente, sem exigir alterações nos demais. A Figura~\ref{fig:arquitetura} apresenta a visão geral da arquitetura, incluindo os componentes internos de cada módulo e os pontos de comunicação entre eles.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{figuras/arquitetura_spino_atualizada.pdf}
+\includegraphics[width=0.85\textwidth]{figuras/Arquitetura_spino.pdf}
 \caption{Visão geral da arquitetura do Spino, com os três módulos e seus componentes internos.}
 \label{fig:arquitetura}
 \end{figure*}
 
-\subsection{Módulo 1 --- Sensoriamento, processamento e transmissão}
+\subsection{Módulo 1 --- Aquisição e processamento de campo}
 
 O Módulo 1 constitui a unidade de campo da arquitetura Spino,
 sendo responsável pela interação direta com os sensores e demais
@@ -279,11 +279,11 @@ Esse arranjo reforça o princípio de desacoplamento entre a comunicação físi
 
 Após todas as validações, os dados processados são encapsulados em uma estrutura adequada -- como JSON -- e encaminhados ao backend por meio de requisições HTTP REST, utilizando o endpoint disponibilizado pelo Módulo 3 para essa finalidade. No estágio atual do projeto, essa etapa de integração ainda está em desenvolvimento, de modo que o encaminhamento ao Módulo 3 é descrito aqui como arquitetura proposta.
 
-A modularidade da arquitetura Spino permite ainda que o Módulo 2 seja adaptado para outras tecnologias de comunicação além da radiofrequência em 433 MHz, como LoRa, ZigBee, Wi-Fi, Bluetooth ou Ethernet, mantendo praticamente inalteradas as funções de processamento de borda já estabelecidas. Aspectos relacionados à confiabilidade da comunicação -- como a substituição do checksum atual, um esquema simples de soma modular, por mecanismos de detecção mais robustos (como CRC), além de retransmissão de mensagens, identificação de perdas de pacotes e validação da ordem de chegada -- constituem melhorias que podem ser incorporadas futuramente para aumentar a robustez da arquitetura, não fazendo parte do escopo avaliado nesta submissão.
+A modularidade da arquitetura Spino permite ainda que o Módulo 2 seja adaptado a outras tecnologias de comunicação além da radiofrequência em 433 MHz, mantendo praticamente inalteradas as funções de processamento de borda já estabelecidas. Aspectos relacionados à confiabilidade da comunicação -- como a substituição do checksum atual, um esquema simples de soma modular, por mecanismos de detecção mais robustos (como CRC), além de retransmissão de mensagens, identificação de perdas de pacotes e validação da ordem de chegada -- constituem melhorias que podem ser incorporadas futuramente para aumentar a robustez da arquitetura, não fazendo parte do escopo avaliado nesta submissão.
 
 Embora o estudo de caso deste trabalho esteja relacionado ao monitoramento estrutural de uma ponte de palitos instrumentada, o Módulo 2 foi concebido como uma camada genérica de processamento de borda, aplicável a outros domínios de sensoriamento remoto que demandem recepção e encaminhamento de dados a uma infraestrutura computacional central. O monitoramento climático de uma cidade, por exemplo, poderia empregar a mesma camada de processamento de borda associada a tecnologias de transmissão de maior alcance, como LoRa, mantendo inalteradas as funções de validação e encaminhamento já descritas.
 
-\subsection{Módulo 3 --- Orquestração, persistência e supervisão}
+\subsection{Módulo 3 --- Centralização das regras de negócio em uma plataforma web}
 O Módulo 3 corresponde à camada de supervisão da arquitetura Spino. Sua função é receber os dados previamente processados pelos módulos de campo e de borda, aplicar regras de negócio, persistir os registros e disponibilizar informações para usuários e interfaces de acompanhamento. A separação entre aquisição física e supervisão web permite modificar a interface, as regras de apresentação e o armazenamento sem alterar diretamente o Módulo 1.
 
 A arquitetura proposta utiliza Laravel como backend e gateway de integração, React com Inertia.js para as interfaces web e Laravel Reverb para a distribuição de eventos em tempo real \cite{laravel2026}. O nó de processamento local pode enviar os dados ao servidor por uma interface REST, prevista no endpoint \texttt{POST /api/v1/sensors/capture}, com autenticação por token. Após validar a estrutura da mensagem e aplicar as regras pertinentes, o backend pode armazenar as leituras e gerar eventos associados à atualização de uma grandeza monitorada ou ao atingimento de condições definidas pela aplicação.
@@ -297,13 +297,10 @@ No estágio atual, o cadastro de equipes e a persistência de dados já estão i
 \section{Conclusão}
 Este trabalho apresentou o Spino, uma arquitetura modular para aquisição, processamento e disponibilização de telemetria, projetada para ser adaptável a diferentes domínios de sensoriamento remoto. Foram detalhados os três módulos que compõem a arquitetura -- aquisição de campo, processamento de borda e supervisão local, e centralização web das regras de negócio -- bem como o estado atual de sua implementação, empregando como estudo de caso o monitoramento de ensaios de carga em competições de pontes de palito.
 
-No estágio atual, o Módulo 1 opera de forma autônoma e completa, realizando a aquisição, o processamento inicial e a transmissão dos dados por radiofrequência. O Módulo 2 recebe, valida e processa os protocolos de comunicação, disponibilizando parte dessas informações por meio de uma interface de exibição local em tempo real, ainda em ajuste para contemplar a totalidade dos campos do protocolo; a etapa de encaminhamento ao Módulo 3 permanece em desenvolvimento. O Módulo 3, por sua vez, já implementa o cadastro de equipes e a persistência de dados, ainda operando com dados simulados na exibição das leituras coletadas pelos módulos de campo.
+No estágio atual, o Módulo 1 opera de forma autônoma e completa, realizando a aquisição, o processamento inicial e a transmissão dos dados por radiofrequência. O Módulo 2 recebe, valida e processa os dados vindos dos protocolos de comunicação, disponibilizando parte dessas informações por meio de uma interface de exibição local em tempo real, ainda em ajuste para contemplar a totalidade dos campos do protocolo; a etapa de encaminhamento ao Módulo 3 permanece em desenvolvimento. O Módulo 3, por sua vez, já implementa o cadastro de equipes e a persistência de dados, ainda operando com dados simulados na exibição das leituras coletadas pelos módulos de campo.
 
 A principal limitação deste trabalho é a ausência de uma integração de ponta a ponta entre os três módulos: embora cada um opere de forma independente e, em grande parte, funcional, a validação apresentada não contempla o fluxo completo de dados desde a aquisição até a supervisão web. Como trabalhos futuros, pretende-se concluir a integração via API entre os Módulos 2 e 3, validar a arquitetura em operação completa durante uma competição real, e avaliar a adaptação do Módulo 1 a outros domínios de sensoriamento, reforçando o caráter modular e reconfigurável proposto para a arquitetura Spino.
 
-\section*{Agradecimentos}
-% TODO (grupo): opcional -- revisao confirmada como single-blind (SBESC 2025), entao nao ha
-% obrigatoriedade de anonimizar. Preencher se houver financiamento/apoio institucional a citar.
 
 \begin{thebibliography}{00}
 \bibitem{quartaroli2014} C. F. Quartaroli, L. E. Vicente e L. S. de Araújo, ``Sensoriamento remoto,'' Embrapa, 2014.
@@ -312,7 +309,7 @@ A principal limitação deste trabalho é a ausência de uma integração de pon
 \bibitem{vidalpardo2018} A. Vidal-Pardo e S. Pindado, ``Design and Development of a 5-Channel Arduino-Based Data Acquisition System (ABDAS) for Experimental Aerodynamics Research,'' \textit{Sensors}, v. 18, n. 7, art. 2382, 2018.
 \bibitem{njoku2025} E. C. Njoku, V. O. Ehile e O. A. Egonu, ``Development of an Arduino-Based Data Acquisition System for a Mid-Sized Wind Tunnel,'' \textit{Journal of Engineering Research and Reports}, v. 27, n. 9, p. 1--9, 2025.
 \bibitem{elabd2017} M. El-Abd, ``A Review of Embedded Systems Education in the Arduino Age: Lessons Learned and Future Directions,'' \textit{International Journal of Engineering Pedagogy}, v. 7, n. 2, p. 79--93, 2017.
-\bibitem{arduinodocs} ARDUINO. ``Mega 2560 Rev3.'' Arduino Documentation. Acesso em: 18 jul. 2026.
+\bibitem{arduinodocs} ARDUINO. ``Mega 2560 Rev3.'' Arduino Documentation. Dispon\'ivel em: https://docs.arduino.cc/hardware/mega-2560/. Acesso em: 18 jul. 2026.
 \bibitem{laravel2026} LARAVEL. ``Broadcasting.'' Laravel Documentation, 2026. Dispon\'ivel em: https://laravel.com/docs/12.x/broadcasting. Acesso em: 18 jul. 2026.
 \bibitem{shi2016} W. Shi, J. Cao, Q. Zhang, Y. Li e L. Xu, ``Edge Computing: Vision and Challenges,'' \textit{IEEE Internet of Things Journal}, v. 3, n. 5, p. 637--646, 2016.
 \end{thebibliography}
